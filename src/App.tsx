@@ -1,29 +1,29 @@
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable"; 
+import autoTable from "jspdf-autotable";
 import React, { useState } from 'react';
-import { 
-  Calculator, 
-  TrendingUp, 
-  Clock, 
-  DollarSign, 
-  Zap, 
-  Brain, 
-  AlertTriangle, 
-  CheckCircle2, 
+import {
+  Calculator,
+  TrendingUp,
+  Clock,
+  DollarSign,
+  Zap,
+  Brain,
+  AlertTriangle,
+  CheckCircle2,
   ArrowRight,
   RefreshCcw,
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
 } from 'recharts';
 import Markdown from 'react-markdown';
 import { analyzeDecision, DecisionOption, AnalysisResult } from './lib/gemini';
@@ -59,23 +59,216 @@ export default function App() {
     setThought('');
   };
 
+  // Türkçe karakter dönüşümü
+  const normalizeTR = (str: string): string => {
+    return str
+      .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+      .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+      .replace(/ş/g, 's').replace(/Ş/g, 'S')
+      .replace(/ı/g, 'i').replace(/İ/g, 'I')
+      .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+      .replace(/ç/g, 'c').replace(/Ç/g, 'C');
+  };
+
   const downloadPDF = (analysis: AnalysisResult) => {
-    const doc = new jsPDF();
-    doc.setFont("helvetica", "bold");
-    doc.text("Ratio AI - Karar Analiz Raporu", 20, 20);
-    doc.setFont("helvetica", "normal");
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 18;
+    const contentW = pageW - margin * 2;
+
+    const nameA = normalizeTR(analysis.extractedOptions?.nameA || 'Secenek A');
+    const nameB = normalizeTR(analysis.extractedOptions?.nameB || 'Secenek B');
+
+    // ── HEADER ──────────────────────────────────────────────
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.rect(0, 0, pageW, 38, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('Ratio AI', margin, 16);
+
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(`Ozet: ${analysis.summary}`, 20, 35, { maxWidth: 170 });
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text('Karar Analiz Raporu', margin, 25);
+
+    const now = new Date();
+    const dateStr = `${now.getDate().toString().padStart(2,'0')}.${(now.getMonth()+1).toString().padStart(2,'0')}.${now.getFullYear()}`;
+    doc.setFontSize(9);
+    doc.text(dateStr, pageW - margin, 25, { align: 'right' });
+
+    // ── ÖZET ────────────────────────────────────────────────
+    let y = 50;
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Ozet', margin, y);
+    y += 7;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(51, 65, 85);
+    const summaryLines = doc.splitTextToSize(normalizeTR(analysis.summary), contentW);
+    doc.text(summaryLines, margin, y);
+    y += summaryLines.length * 6 + 6;
+
+    // ── KAZAN ─────────────────────────────────────────────
+    const winnerLabel = analysis.winner === 'A' ? nameA : nameB;
+    const winnerColor: [number, number, number] = analysis.winner === 'A' ? [37, 99, 235] : [79, 70, 229];
+    doc.setFillColor(...winnerColor);
+    doc.roundedRect(margin, y, contentW, 14, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(`Onerilir Secenek: ${winnerLabel}`, margin + 6, y + 9);
+    y += 22;
+
+    // ── KARŞILAŞTIRMA MATRİSİ ─────────────────────────────
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Karsilastirma Matrisi', margin, y);
+    y += 6;
 
     autoTable(doc, {
-      startY: 55,
-      head: [['Metrik', analysis.extractedOptions?.nameA || 'Secenek A', analysis.extractedOptions?.nameB || 'Secenek B']],
-      body: analysis.comparisonTable.map(row => [row.metric, row.optionA, row.optionB]),
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [[
+        { content: 'Metrik', styles: { fillColor: [30, 41, 59], textColor: [255,255,255], fontStyle: 'bold' } },
+        { content: nameA, styles: { fillColor: [37, 99, 235], textColor: [255,255,255], fontStyle: 'bold' } },
+        { content: nameB, styles: { fillColor: [79, 70, 229], textColor: [255,255,255], fontStyle: 'bold' } }
+      ]],
+      body: analysis.comparisonTable.map(row => [
+        normalizeTR(row.metric),
+        normalizeTR(String(row.optionA)),
+        normalizeTR(String(row.optionB))
+      ]),
       theme: 'grid',
-      styles: { font: 'helvetica', fontSize: 9 }
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 4 },
+      columnStyles: {
+        0: { textColor: [30, 41, 59], fontStyle: 'bold', fillColor: [248, 250, 252] },
+        1: { textColor: [30, 58, 138], fillColor: [239, 246, 255] },
+        2: { textColor: [46, 16, 101], fillColor: [245, 243, 255] }
+      },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255]
+      },
+      headStyles: { halign: 'center' },
+      bodyStyles: { halign: 'center' },
+      columnStyles: {
+        0: { halign: 'left', textColor: [30, 41, 59], fontStyle: 'bold', fillColor: [248, 250, 252] },
+        1: { textColor: [30, 58, 138], fillColor: [239, 246, 255] },
+        2: { textColor: [46, 16, 101], fillColor: [245, 243, 255] }
+      }
     });
 
-    doc.save("ratio-analiz.pdf");
+    y = (doc as any).lastAutoTable.finalY + 12;
+
+    // ── SKOR KARTEZİ (Bar Grafik) ─────────────────────────
+    if (y + 80 > pageH - 20) { doc.addPage(); y = 20; }
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Skor Karsilastirmasi (0-10)', margin, y);
+    y += 7;
+
+    const barMaxW = contentW * 0.65;
+    const rowH = 11;
+    const labelW = contentW * 0.30;
+
+    analysis.scorecard.forEach((s, i) => {
+      if (y + rowH * 2 + 4 > pageH - 20) { doc.addPage(); y = 20; }
+      const metricLabel = normalizeTR(s.metric);
+
+      // Metrik etiketi
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text(metricLabel, margin, y + rowH * 0.75);
+
+      const barX = margin + labelW;
+      const barH = 4.5;
+
+      // A barı
+      const wA = (s.scoreA / 10) * barMaxW;
+      doc.setFillColor(37, 99, 235);
+      doc.roundedRect(barX, y, wA, barH, 1, 1, 'F');
+      doc.setTextColor(37, 99, 235);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text(`${nameA.substring(0,12)}: ${s.scoreA}/10`, barX + wA + 2, y + barH - 0.5);
+
+      // B barı
+      const wB = (s.scoreB / 10) * barMaxW;
+      doc.setFillColor(79, 70, 229);
+      doc.roundedRect(barX, y + barH + 2, wB, barH, 1, 1, 'F');
+      doc.setTextColor(79, 70, 229);
+      doc.text(`${nameB.substring(0,12)}: ${s.scoreB}/10`, barX + wB + 2, y + barH * 2 + 1.5);
+
+      y += rowH * 2 + 2;
+    });
+
+    y += 6;
+
+    // ── GİZLİ MALİYETLER ─────────────────────────────────
+    if (y + 40 > pageH - 20) { doc.addPage(); y = 20; }
+
+    doc.setFillColor(255, 251, 235);
+    doc.setDrawColor(251, 191, 36);
+    doc.roundedRect(margin, y, contentW, 10 + analysis.hiddenCosts.length * 8, 3, 3, 'FD');
+
+    doc.setTextColor(120, 53, 15);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Gizli Maliyetler & Riskler', margin + 5, y + 8);
+    y += 14;
+
+    analysis.hiddenCosts.forEach((cost) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(92, 45, 5);
+      const lines = doc.splitTextToSize(`• ${normalizeTR(cost)}`, contentW - 10);
+      doc.text(lines, margin + 5, y);
+      y += lines.length * 5.5 + 1;
+    });
+
+    y += 8;
+
+    // ── NİHAİ TAVSİYE ────────────────────────────────────
+    if (y + 40 > pageH - 20) { doc.addPage(); y = 20; }
+
+    doc.setFillColor(15, 23, 42);
+    doc.roundedRect(margin, y, contentW, 12, 3, 3, 'F');
+    doc.setTextColor(250, 204, 21);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Nihai Tavsiye', margin + 5, y + 8);
+    y += 18;
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9.5);
+    doc.setTextColor(30, 41, 59);
+    const recLines = doc.splitTextToSize(normalizeTR(analysis.finalRecommendation), contentW);
+    doc.text(recLines, margin, y);
+    y += recLines.length * 6;
+
+    // ── FOOTER ───────────────────────────────────────────
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFillColor(248, 250, 252);
+      doc.rect(0, pageH - 12, pageW, 12, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Ratio AI - Rasyonel Karar Analizi', margin, pageH - 4);
+      doc.text(`Sayfa ${p} / ${totalPages}`, pageW - margin, pageH - 4, { align: 'right' });
+    }
+
+    doc.save('ratio-analiz-raporu.pdf');
   };
 
   const startListening = () => {
@@ -118,7 +311,7 @@ export default function App() {
                 <Brain className="w-6 h-6 text-brand-600" />
                 <h3 className="font-display font-bold text-xl">Düşüncen Nedir?</h3>
               </div>
-              
+
               <textarea
                 value={thought}
                 onChange={(e) => setThought(e.target.value)}
@@ -129,7 +322,6 @@ export default function App() {
                 <Zap className="w-4 h-4" /> Sesle Anlat
               </button>
 
-              {/* Orijinal Kategoriler Bloğu Geri Geldi */}
               <div className="mt-8">
                 <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Info className="w-4 h-4" /> Nereden Başlamalı? (İlham Al)
@@ -173,32 +365,63 @@ export default function App() {
                 <button onClick={reset} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl font-semibold">
                   <RefreshCcw className="w-4 h-4" /> Yeni Analiz
                 </button>
-                {/* PDF Butonu Çalışır Vaziyette */}
                 <button onClick={() => downloadPDF(result)} className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 transition-colors shadow-lg">
                   <Calculator className="w-4 h-4" /> PDF Raporu İndir
                 </button>
               </div>
             </div>
 
-            {/* Karşılaştırma Grid ve Grafik Alanı */}
+            {/* Karşılaştırma Grid ve Grafik */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 glass-card rounded-3xl p-6 bg-white shadow-lg">
                 <h4 className="font-bold text-xl mb-6">Karşılaştırma Matrisi</h4>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 text-slate-400">
-                        <th className="py-4 px-2">Metrik</th>
-                        <th className="py-4 px-2 text-blue-600">{result.extractedOptions?.nameA || 'A'}</th>
-                        <th className="py-4 px-2 text-indigo-600">{result.extractedOptions?.nameB || 'B'}</th>
+                      <tr className="border-b-2 border-slate-200">
+                        {/* Metrik başlığı */}
+                        <th className="py-4 px-3 text-left text-slate-500 font-semibold text-xs uppercase tracking-wider">
+                          Metrik
+                        </th>
+                        {/* Seçenek A - Mavi ton */}
+                        <th className="py-4 px-3 text-center">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-sm shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-blue-200 inline-block" />
+                            {result.extractedOptions?.nameA || 'A'}
+                          </span>
+                        </th>
+                        {/* Seçenek B - İndigo ton */}
+                        <th className="py-4 px-3 text-center">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold text-sm shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-indigo-200 inline-block" />
+                            {result.extractedOptions?.nameB || 'B'}
+                          </span>
+                        </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody>
                       {result.comparisonTable.map((row, i) => (
-                        <tr key={i} className="hover:bg-slate-50/50">
-                          <td className="py-4 px-2 font-bold">{row.metric}</td>
-                          <td className="py-4 px-2">{row.optionA}</td>
-                          <td className="py-4 px-2">{row.optionB}</td>
+                        <tr
+                          key={i}
+                          className={cn(
+                            "border-b border-slate-100 transition-colors hover:bg-slate-50",
+                            i % 2 === 0 ? "bg-white" : "bg-slate-50/40"
+                          )}
+                        >
+                          {/* Metrik hücresi */}
+                          <td className="py-4 px-3 font-bold text-slate-700">{row.metric}</td>
+                          {/* A değeri - mavi arka plan */}
+                          <td className="py-4 px-3 text-center">
+                            <span className="inline-block px-3 py-1 rounded-lg bg-blue-50 text-blue-800 font-semibold border border-blue-100">
+                              {row.optionA}
+                            </span>
+                          </td>
+                          {/* B değeri - indigo arka plan */}
+                          <td className="py-4 px-3 text-center">
+                            <span className="inline-block px-3 py-1 rounded-lg bg-indigo-50 text-indigo-800 font-semibold border border-indigo-100">
+                              {row.optionB}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
