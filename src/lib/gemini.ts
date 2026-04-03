@@ -34,48 +34,30 @@ export interface AnalysisResult {
 }
 
 export async function analyzeDecision(thought: string): Promise<AnalysisResult> {
-  const prompt = `
-    Sen dünyanın en gelişmiş "Ratio" (Karar Analisti ve Fırsat Maliyeti Hesaplayıcısı) yapay zekasısın. 
-    Kullanıcının yazdığı şu ikilemi/düşünceyi analiz et:
-    
-    "${thought}"
+  // src/lib/gemini.ts içindeki prompt değişkenini bununla değiştir:
 
-    Görevin:
-    1. Bu metinden iki ana seçeneği (A ve B) çıkar.
-    2. Maddi, manevi, zaman ve efor açısından hangisinin daha mantıklı olduğunu bilimsel ve rasyonel bir şekilde analiz et.
-    3. Rasyonel, dürüst ve hafif iğneleyici bir ton kullan.
+const prompt = `
+  Sen dünyanın en gelişmiş "Ratio" (Karar Analisti) yapay zekasısın.
+  Kullanıcının yazdığı (veya sesle ilettiği) şu ikilemi analiz et: "${thought}"
 
-    Analiz kriterleri:
-    1. Finansal Maliyet
-    2. Zaman Maliyeti
-    3. Birim Verimliliği
-    4. Psikolojik Faktör (Stres/Tatmin)
+  Görevin:
+  1. Metinden A ve B seçeneklerini netleştir. Eğer sesli bir dökümse, konuşma dilindeki gereksiz kelimeleri temizle.
+  2. PDF Raporu için uygun, resmi ama iğneleyici bir "Karar Özeti" oluştur.
+  3. Verileri rasyonel analiz süzgecinden geçir.
 
-    Yanıtını şu JSON formatında ver:
-    {
-      "summary": "Analizin kısa özeti (Örn: Seçenek B %15 daha mantıklı)",
-      "extractedOptions": {
-        "nameA": "Çıkarılan Seçenek A ismi",
-        "nameB": "Çıkarılan Seçenek B ismi"
-      },
-      "comparisonTable": [
-        {"metric": "Maddi Fark", "optionA": "...", "optionB": "..."},
-        {"metric": "Zaman Farkı", "optionA": "...", "optionB": "..."},
-        {"metric": "Efor/Stres", "optionA": "...", "optionB": "..."}
-      ],
-      "scorecard": [
-        {"metric": "Maddi Uygunluk", "scoreA": 8, "scoreB": 5},
-        {"metric": "Zaman Verimliliği", "scoreA": 4, "scoreB": 9},
-        {"metric": "Psikolojik Tatmin", "scoreA": 7, "scoreB": 6},
-        {"metric": "Birim Fayda", "scoreA": 6, "scoreB": 8}
-      ],
-      "hiddenCosts": ["Kullanıcının göremediği gizli maliyet uyarısı 1", "..."],
-      "finalRecommendation": "Net ve ikna edici sonuç cümlesi",
-      "percentageDifference": 15,
-      "winner": "B"
-    }
-  `;
-
+  Yanıtını şu JSON formatında ver:
+  {
+    "summary": "Analizin kısa ve vurucu özeti",
+    "pdfHeader": "RATİO ANALİZ RAPORU - GİZLİ VE KİŞİYE ÖZEL",
+    "extractedOptions": { "nameA": "...", "nameB": "..." },
+    "comparisonTable": [...],
+    "scorecard": [...],
+    "hiddenCosts": [...],
+    "finalRecommendation": "Kesin sonuç cümlesi",
+    "percentageDifference": 15,
+    "winner": "A"
+  }
+`;
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: prompt,
