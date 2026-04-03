@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const API_KEY = process.env.GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenAI({ apiKey: API_KEY }); 
 
 export interface DecisionOption {
   name: string;
