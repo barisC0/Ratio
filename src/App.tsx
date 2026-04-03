@@ -1,3 +1,5 @@
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 import React, { useState } from 'react';
 import { 
   Calculator, 
@@ -65,6 +67,33 @@ export default function App() {
     setThought('');
   };
 
+  const downloadPDF = (analysis: AnalysisResult) => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(22);
+    doc.text("Ratio AI - Karar Analiz Raporu", 20, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Ozet: ${analysis.summary}`, 20, 40);
+    doc.text(`Nihai Tavsiye: ${analysis.finalRecommendation}`, 20, 55);
+
+    (doc as any).autoTable({
+      startY: 70,
+      head: [['Metrik', analysis.extractedOptions?.nameA || 'Secenek A', analysis.extractedOptions?.nameB || 'Secenek B']],
+      body: analysis.comparisonTable.map(row => [row.metric, row.optionA, row.optionB]),
+    });
+
+    doc.save("ratio-analiz.pdf");
+  };
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Tarayıcı ses desteği sunmuyor.");
+    const recognition = new SpeechRecognition();
+    recognition.lang = "tr-TR";
+    recognition.onresult = (e: any) => setThought(e.results[0][0].transcript);
+    recognition.start();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header */}
@@ -123,6 +152,12 @@ export default function App() {
                 placeholder="Örn: Starbucks'tan her gün kahve almak yerine evde demlesem ayda ne kadar tasarruf ederim ve buna değer mi? Yoksa o sosyal ortamın keyfi paha biçilemez mi?"
                 className="w-full h-48 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-brand-500 transition-all resize-none text-lg leading-relaxed"
               />
+              <button 
+  onClick={startListening}
+  className="mt-2 flex items-center gap-2 text-sm text-brand-600 font-bold hover:text-brand-700"
+>
+  <Zap className="w-4 h-4" /> Sesle Anlat
+</button>
 
               <div className="mt-8">
                 <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -244,6 +279,13 @@ export default function App() {
                 </div>
               </div>
             </div>
+            <button 
+  onClick={() => downloadPDF(result)}
+  className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 transition-colors"
+>
+  <Calculator className="w-4 h-4" />
+  PDF Raporu İndir
+</button>
 
             {/* Comparison Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
