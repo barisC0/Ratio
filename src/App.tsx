@@ -87,6 +87,25 @@ export default function App() {
     recognition.start();
   };
 
+  const categories = [
+    {
+      title: "Finansal İkilemler",
+      examples: ["Dışarıdan yemek vs Evde yemek", "Yeni telefon vs Mevcut tamir", "Araba almak vs Taksi"]
+    },
+    {
+      title: "Kariyer & Eğitim",
+      examples: ["Yurtdışı yüksek lisans vs Türkiye'de iş", "Kurumsal vs Kendi işini kurmak", "Yeni dil vs Mevcut yetenek"]
+    },
+    {
+      title: "Yaşam Tarzı",
+      examples: ["Spor salonu vs Evde egzersiz", "Şehir merkezi vs Şehir dışı ev", "Hafta sonu tatil vs Dinlenmek"]
+    },
+    {
+      title: "Alışkanlıklar",
+      examples: ["Günlük kahve almak vs Evde demlemek", "Sigarayı bırakmak vs Devam", "Netflix aboneliği iptali"]
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
@@ -112,7 +131,7 @@ export default function App() {
 
         {!result ? (
           <div className="space-y-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-3xl p-8 bg-white shadow-xl">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-3xl p-8 bg-white shadow-xl border border-slate-100">
               <div className="flex items-center gap-3 mb-6">
                 <Brain className="w-6 h-6 text-indigo-600" />
                 <h3 className="font-display font-bold text-xl">Düşüncen Nedir?</h3>
@@ -120,22 +139,29 @@ export default function App() {
               <textarea
                 value={thought}
                 onChange={(e) => setThought(e.target.value)}
-                placeholder="Örn: Starbucks'tan her gün kahve almak yerine..."
-                className="w-full h-48 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 text-lg"
+                placeholder="Örn: Starbucks'tan her gün kahve almak yerine evde demlesem ayda ne kadar tasarruf ederim?"
+                className="w-full h-48 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 text-lg transition-all"
               />
               <button onClick={startListening} className="mt-2 flex items-center gap-2 text-sm text-indigo-600 font-bold hover:text-indigo-700">
-                <Zap className="w-4 h-4" /> Sesle Anlat
+                <Zap className="w-4 h-4" /> Sesle Anlat (Beta)
               </button>
 
               <div className="mt-8">
                 <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <Info className="w-4 h-4" /> Nereden Başlamalı?
+                  <Info className="w-4 h-4" /> İlham Al
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {["Dışarıdan yemek vs Evde yemek", "iPhone 15 vs Tatil", "Yurtdışı vs Türkiye", "Spor salonu vs Evde egzersiz"].map((ex) => (
-                    <button key={ex} onClick={() => setThought(ex)} className="text-xs bg-white hover:bg-indigo-50 border border-slate-200 p-3 rounded-xl transition-all text-left">
-                      {ex}
-                    </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {categories.map((category, idx) => (
+                    <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                      <h5 className="text-xs font-bold text-slate-500 mb-2">{category.title}</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {category.examples.map((example) => (
+                          <button key={example} onClick={() => setThought(example)} className="text-xs bg-white hover:bg-indigo-50 border border-slate-200 p-2 rounded-lg transition-all">
+                            {example}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -143,8 +169,8 @@ export default function App() {
 
             <div className="flex justify-center">
               <button onClick={handleCalculate} disabled={loading || !thought.trim()} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-bold text-xl shadow-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-50">
-                {loading ? <RefreshCcw className="animate-spin mr-2" /> : <Zap className="w-6 h-6 text-yellow-400 mr-2 inline" />}
-                {loading ? 'Analiz Ediliyor...' : 'Rasyonel Analizi Başlat'}
+                {loading ? <RefreshCcw className="animate-spin mr-2 inline" /> : <Zap className="w-6 h-6 text-yellow-400 mr-2 inline" />}
+                {loading ? 'Analiz Ediliyor...' : 'Analizi Başlat'}
               </button>
             </div>
           </div>
@@ -162,25 +188,24 @@ export default function App() {
               </div>
             </div>
 
-            {/* Grafik ve Tablo Alanı */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
                 <h4 className="font-bold text-xl mb-6">Karşılaştırma Matrisi</h4>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm text-left">
                     <thead>
-                      <tr className="border-b border-slate-100 text-slate-400 uppercase">
-                        <th className="text-left py-4">Metrik</th>
-                        <th className="text-left py-4">{result.extractedOptions?.nameA || 'A'}</th>
-                        <th className="text-left py-4">{result.extractedOptions?.nameB || 'B'}</th>
+                      <tr className="border-b border-slate-100 text-slate-400">
+                        <th className="py-4 px-2">Metrik</th>
+                        <th className="py-4 px-2">{result.extractedOptions?.nameA || 'A'}</th>
+                        <th className="py-4 px-2">{result.extractedOptions?.nameB || 'B'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {result.comparisonTable.map((row, i) => (
                         <tr key={i} className="hover:bg-slate-50/50">
-                          <td className="py-4 font-bold text-slate-700">{row.metric}</td>
-                          <td className="py-4">{row.optionA}</td>
-                          <td className="py-4">{row.optionB}</td>
+                          <td className="py-4 px-2 font-bold">{row.metric}</td>
+                          <td className="py-4 px-2">{row.optionA}</td>
+                          <td className="py-4 px-2">{row.optionB}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -188,13 +213,13 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
-                <h4 className="font-bold text-xl mb-6 text-center">Puanlama</h4>
-                <div className="h-[300px] w-full" style={{ minWidth: 0 }}>
+              <div className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 min-h-[300px]">
+                <h4 className="font-bold text-xl mb-6 text-center">Analiz Grafiği</h4>
+                <div className="h-[250px] w-full" style={{ minWidth: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={result.scorecard.map(s => ({ name: s.metric, A: s.scoreA, B: s.scoreB }))} layout="vertical">
                       <XAxis type="number" domain={[0, 10]} hide />
-                      <YAxis dataKey="name" type="category" width={80} fontSize={10} />
+                      <YAxis dataKey="name" type="category" width={80} fontSize={10} axisLine={false} tickLine={false} />
                       <Tooltip />
                       <Bar dataKey="A" fill="#2563eb" radius={[0, 4, 4, 0]} />
                       <Bar dataKey="B" fill="#4f46e5" radius={[0, 4, 4, 0]} />
@@ -206,6 +231,9 @@ export default function App() {
           </div>
         )}
       </main>
+      <footer className="mt-20 border-t border-slate-200 py-12 text-center text-slate-400 text-sm">
+        <p>© 2026 Ratio AI. Veriyle karar ver, pişman olma.</p>
+      </footer>
     </div>
   );
 }
