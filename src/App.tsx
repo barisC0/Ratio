@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable"; 
+import autoTable from "jspdf-autotable"; // Bu şekilde import etmek hatayı çözecektir
 import React, { useState } from 'react';
 import { 
   Calculator, 
@@ -69,26 +69,29 @@ export default function App() {
   };
 
   // DÜZELTİLMİŞ PDF FONKSİYONU
-  const downloadPDF = (analysis: AnalysisResult) => {
-    const doc = new jsPDF();
-    
-    doc.setFont("helvetica", "bold");
-    doc.text("Ratio Analiz Raporu", 20, 20);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`Ozet: ${analysis.summary}`, 20, 30, { maxWidth: 170 });
+ const downloadPDF = (analysis: AnalysisResult) => {
+  const doc = new jsPDF();
 
-    autoTable(doc, {
-      startY: 50,
-      head: [['Metrik', analysis.extractedOptions?.nameA || 'Secenek A', analysis.extractedOptions?.nameB || 'Secenek B']],
-      body: analysis.comparisonTable.map(row => [row.metric, row.optionA, row.optionB]),
-      theme: 'grid',
-      styles: { fontSize: 9 }
-    });
+  // Başlık
+  doc.setFont("helvetica", "bold");
+  doc.text("Ratio AI - Karar Analiz Raporu", 20, 20);
 
-    doc.save("ratio-analiz.pdf");
-  };
+  // Özet Metni
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Ozet: ${analysis.summary}`, 20, 30, { maxWidth: 170 });
+
+  // Tablo Oluşturma (Doğrudan autoTable fonksiyonu ile)
+  autoTable(doc, {
+    startY: 50,
+    head: [['Metrik', analysis.extractedOptions?.nameA || 'Secenek A', analysis.extractedOptions?.nameB || 'Secenek B']],
+    body: analysis.comparisonTable.map(row => [row.metric, row.optionA, row.optionB]),
+    theme: 'grid',
+    styles: { fontSize: 9 }
+  });
+
+  doc.save("ratio-analiz.pdf");
+};
 
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
