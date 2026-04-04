@@ -5,12 +5,10 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// Mock analiz fonksiyonu (gerçek API yerine)
+// Mock analiz fonksiyonu
 const analyzeDecision = async (text) => {
-  // Simüle edilmiş API gecikmesi
   await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // Mock sonuç döndür
   return {
     summary: `"${text.substring(0, 50)}..." ikileminde rasyonel analiz sonucu: Seçenek A (Mevcut durumu koruma) uzun vadede daha avantajlı görünüyor.`,
     winner: 'A',
@@ -350,87 +348,96 @@ const RatioLanding = () => {
   // SONUÇ EKRANI
   if (result) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden font-main">
+      <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        {/* Inline Fonts - CDN'den yükleme sorununu önler */}
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
           .font-display { font-family: 'Syne', sans-serif; }
-          .font-main { font-family: 'Space Grotesk', sans-serif; }
           @keyframes marquee {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
           }
           .animate-marquee {
             display: inline-block;
-            animation: marquee 20s linear infinite;
+            animation: marquee 25s linear infinite;
           }
           .animate-marquee-reverse {
             display: inline-block;
-            animation: marquee 20s linear infinite reverse;
+            animation: marquee 25s linear infinite reverse;
           }
           .text-stroke {
-            -webkit-text-stroke: 2px #ccff00;
+            -webkit-text-stroke: 1.5px #ccff00;
             color: transparent;
+          }
+          @media (max-width: 768px) {
+            .text-stroke {
+              -webkit-text-stroke: 1px #ccff00;
+            }
           }
         `}</style>
 
-        <div className="fixed inset-0 z-0 opacity-10 pointer-events-none [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:40px_40px]"></div>
+        <div className="fixed inset-0 z-0 opacity-10 pointer-events-none" style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.05) 1px,transparent 1px)',
+          backgroundSize: '40px 40px'
+        }}></div>
         
         <div className="relative z-10 bg-white text-black py-2 border-b-4 border-white overflow-hidden whitespace-nowrap">
-          <div className="animate-marquee font-bold text-sm uppercase">
-            ANALIZ TAMAMLANDI • KARAR VERMEK ZOR GELİYOR? • YAPAY ZEKA SANA YARDIM ETSİN • RASYONEL ANALIZ • 
+          <div className="animate-marquee font-bold text-xs sm:text-sm uppercase tracking-wider">
+            ANALIZ TAMAMLANDI • KARAR VERMEK ZOR GELIYOR? • YAPAY ZEKA SANA YARDIM ETSIN • RASYONEL ANALIZ • IÇINDEKI IKILEMI ÇÖZ • ANALIZ TAMAMLANDI • KARAR VERMEK ZOR GELIYOR? • YAPAY ZEKA SANA YARDIM ETSIN • 
           </div>
         </div>
 
-        <nav className="relative z-10 border-b-4 border-white bg-black p-6">
+        <nav className="relative z-10 border-b-4 border-white bg-black p-4 sm:p-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white flex items-center justify-center border-4 border-white shadow-[8px_8px_0px_0px_#ccff00]">
-                <Brain size={32} className="text-black" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 bg-white flex items-center justify-center border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_#ccff00] sm:shadow-[8px_8px_0px_0px_#ccff00]">
+                <Brain size={24} className="text-black sm:w-8 sm:h-8" />
               </div>
-              <span className="text-3xl font-display font-black tracking-tighter">RATIO AI</span>
+              <span className="text-xl sm:text-3xl font-display font-black tracking-tighter">RATIO AI</span>
             </div>
           </div>
         </nav>
 
-        <main className="relative z-10 max-w-6xl mx-auto px-6 py-16">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
+        <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-16">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 sm:space-y-8">
             
             {/* Özet Kartı */}
-            <div className={`border-4 border-white p-8 shadow-[10px_10px_0px_0px_${result.winner === 'A' ? '#0066ff' : '#ff0066'}] max-w-4xl mx-auto ${result.winner === 'A' ? 'bg-blue-950' : 'bg-purple-950'}`}>
-              <h2 className="text-5xl font-black mb-6 text-stroke uppercase font-display text-center">Analiz Tamamlandı</h2>
-              <p className="text-2xl font-mono mb-6 text-center italic">"{thought}"</p>
-              <div className="h-1 bg-white mb-6"></div>
-              <p className={`text-3xl font-black uppercase text-center ${result.winner === 'A' ? 'text-[#0066ff]' : 'text-[#ff0066]'}`}>
+            <div className={`border-2 sm:border-4 border-white p-4 sm:p-8 shadow-[6px_6px_0px_0px_${result.winner === 'A' ? '#0066ff' : '#ff0066'}] sm:shadow-[10px_10px_0px_0px_${result.winner === 'A' ? '#0066ff' : '#ff0066'}] max-w-4xl mx-auto ${result.winner === 'A' ? 'bg-blue-950' : 'bg-purple-950'}`}>
+              <h2 className="text-3xl sm:text-5xl font-black mb-4 sm:mb-6 text-stroke uppercase font-display text-center">Analiz Tamamlandı</h2>
+              <p className="text-base sm:text-2xl font-mono mb-4 sm:mb-6 text-center italic break-words">"{thought}"</p>
+              <div className="h-1 bg-white mb-4 sm:mb-6"></div>
+              <p className={`text-xl sm:text-3xl font-black uppercase text-center ${result.winner === 'A' ? 'text-[#0066ff]' : 'text-[#ff0066]'}`}>
                 Kazanan: {result.winner === 'A' ? result.extractedOptions.nameA : result.extractedOptions.nameB}
               </p>
-              <p className="text-gray-300 text-center mt-4">{result.summary}</p>
+              <p className="text-gray-300 text-center mt-4 text-sm sm:text-base">{result.summary}</p>
             </div>
 
             {/* Karşılaştırma Tablosu */}
-            <div className="border-4 border-white shadow-[8px_8px_0px_0px_white] bg-black overflow-hidden">
-              <div className="grid grid-cols-3 border-b-4 border-white">
-                <div className="bg-slate-800 p-4 font-bold uppercase">Metrik</div>
-                <div className="bg-[#0066ff] p-4 font-bold uppercase text-center border-l-4 border-white">{result.extractedOptions.nameA}</div>
-                <div className="bg-[#ff0066] p-4 font-bold uppercase text-center border-l-4 border-white">{result.extractedOptions.nameB}</div>
+            <div className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_white] sm:shadow-[8px_8px_0px_0px_white] bg-black overflow-hidden">
+              <div className="grid grid-cols-3 border-b-2 sm:border-b-4 border-white text-xs sm:text-base">
+                <div className="bg-slate-800 p-2 sm:p-4 font-bold uppercase">Metrik</div>
+                <div className="bg-[#0066ff] p-2 sm:p-4 font-bold uppercase text-center border-l-2 sm:border-l-4 border-white">{result.extractedOptions.nameA}</div>
+                <div className="bg-[#ff0066] p-2 sm:p-4 font-bold uppercase text-center border-l-2 sm:border-l-4 border-white">{result.extractedOptions.nameB}</div>
               </div>
               {result.comparisonTable.map((row, i) => (
-                <div key={i} className={`grid grid-cols-3 border-b-2 border-white/20 ${i % 2 === 0 ? 'bg-white/5' : 'bg-white/10'}`}>
-                  <div className="p-4 font-bold border-r-4 border-white/20">{row.metric}</div>
-                  <div className="p-4 text-center text-[#0066ff] border-r-4 border-white/20 font-mono">{row.optionA}</div>
-                  <div className="p-4 text-center text-[#ff0066] font-mono">{row.optionB}</div>
+                <div key={i} className={`grid grid-cols-3 border-b border-white/20 text-xs sm:text-base ${i % 2 === 0 ? 'bg-white/5' : 'bg-white/10'}`}>
+                  <div className="p-2 sm:p-4 font-bold border-r-2 sm:border-r-4 border-white/20">{row.metric}</div>
+                  <div className="p-2 sm:p-4 text-center text-[#0066ff] border-r-2 sm:border-r-4 border-white/20 font-mono">{row.optionA}</div>
+                  <div className="p-2 sm:p-4 text-center text-[#ff0066] font-mono">{row.optionB}</div>
                 </div>
               ))}
             </div>
 
             {/* Skor Grafikleri */}
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="border-4 border-white shadow-[8px_8px_0px_0px_#0066ff] bg-black p-6">
-                <h3 className="text-2xl font-display font-bold mb-6 uppercase text-[#0066ff]">Skor Analizi</h3>
-                <div className="h-64">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
+              <div className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_#0066ff] sm:shadow-[8px_8px_0px_0px_#0066ff] bg-black p-4 sm:p-6">
+                <h3 className="text-lg sm:text-2xl font-display font-bold mb-4 sm:mb-6 uppercase text-[#0066ff]">Skor Analizi</h3>
+                <div className="h-48 sm:h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={result.scorecard} layout="vertical">
-                      <XAxis type="number" domain={[0, 10]} stroke="white" />
-                      <YAxis dataKey="metric" type="category" width={100} stroke="white" fontSize={12} />
+                      <XAxis type="number" domain={[0, 10]} stroke="white" fontSize={12} />
+                      <YAxis dataKey="metric" type="category" width={80} stroke="white" fontSize={10} />
                       <Tooltip contentStyle={{ backgroundColor: '#0a0a0a', border: '2px solid white' }} />
                       <Bar dataKey="scoreA" fill="#0066ff" name={result.extractedOptions.nameA} />
                       <Bar dataKey="scoreB" fill="#ff0066" name={result.extractedOptions.nameB} />
@@ -440,14 +447,14 @@ const RatioLanding = () => {
               </div>
 
               {/* Gizli Maliyetler */}
-              <div className="border-4 border-white shadow-[8px_8px_0px_0px_#ffcc00] bg-black p-6">
-                <h3 className="text-2xl font-display font-bold mb-6 uppercase text-[#ffcc00] flex items-center gap-2">
-                  <AlertTriangle /> Gizli Maliyetler
+              <div className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_#ffcc00] sm:shadow-[8px_8px_0px_0px_#ffcc00] bg-black p-4 sm:p-6">
+                <h3 className="text-lg sm:text-2xl font-display font-bold mb-4 sm:mb-6 uppercase text-[#ffcc00] flex items-center gap-2">
+                  <AlertTriangle size={20} /> Gizli Maliyetler
                 </h3>
-                <ul className="space-y-3">
+                <ul className="space-y-2 sm:space-y-3">
                   {result.hiddenCosts.map((cost, i) => (
-                    <li key={i} className="flex gap-3 text-gray-300 border-l-4 border-[#ffcc00] pl-4">
-                      <ArrowRight className="w-5 h-5 flex-shrink-0 text-[#ffcc00]" /> {cost}
+                    <li key={i} className="flex gap-2 sm:gap-3 text-gray-300 text-xs sm:text-sm border-l-2 sm:border-l-4 border-[#ffcc00] pl-2 sm:pl-4">
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-[#ffcc00]" /> {cost}
                     </li>
                   ))}
                 </ul>
@@ -455,37 +462,37 @@ const RatioLanding = () => {
             </div>
 
             {/* Nihai Tavsiye */}
-            <div className="border-4 border-white shadow-[8px_8px_0px_0px_#ccff00] bg-slate-900 p-8 relative">
-              <div className="absolute top-0 left-0 w-2 h-full bg-[#ccff00]"></div>
-              <h3 className="text-3xl font-display font-bold mb-6 uppercase text-[#ccff00] flex items-center gap-2">
+            <div className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_#ccff00] sm:shadow-[8px_8px_0px_0px_#ccff00] bg-slate-900 p-4 sm:p-8 relative">
+              <div className="absolute top-0 left-0 w-1 sm:w-2 h-full bg-[#ccff00]"></div>
+              <h3 className="text-xl sm:text-3xl font-display font-bold mb-4 sm:mb-6 uppercase text-[#ccff00] flex items-center gap-2">
                 <Zap /> Nihai Tavsiye
               </h3>
-              <div className="text-xl leading-relaxed text-gray-300 font-mono whitespace-pre-wrap">
+              <div className="text-sm sm:text-xl leading-relaxed text-gray-300 font-mono whitespace-pre-wrap">
                 {result.finalRecommendation}
               </div>
             </div>
 
             {/* Butonlar */}
-            <div className="flex flex-wrap justify-center gap-6 pt-8">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 pt-4 sm:pt-8">
               <button 
                 onClick={reset}
-                className="border-4 border-white bg-white text-black px-10 py-4 font-black text-xl hover:bg-[#ff0066] hover:text-white transition-all shadow-[6px_6px_0px_0px_#0066ff] font-display uppercase flex items-center gap-3"
+                className="border-2 sm:border-4 border-white bg-white text-black px-6 sm:px-10 py-3 sm:py-4 font-black text-base sm:text-xl hover:bg-[#ff0066] hover:text-white transition-all shadow-[4px_4px_0px_0px_#0066ff] sm:shadow-[6px_6px_0px_0px_#0066ff] font-display uppercase flex items-center gap-2 sm:gap-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
-                <RefreshCcw /> Yeni Analiz
+                <RefreshCcw size={20} /> Yeni Analiz
               </button>
               <button 
                 onClick={() => downloadPDF(result)}
-                className="border-4 border-white bg-[#0066ff] text-white px-10 py-4 font-black text-xl hover:bg-[#ccff00] hover:text-black transition-all shadow-[6px_6px_0px_0px_white] font-display uppercase flex items-center gap-3"
+                className="border-2 sm:border-4 border-white bg-[#0066ff] text-white px-6 sm:px-10 py-3 sm:py-4 font-black text-base sm:text-xl hover:bg-[#ccff00] hover:text-black transition-all shadow-[4px_4px_0px_0px_white] sm:shadow-[6px_6px_0px_0px_white] font-display uppercase flex items-center gap-2 sm:gap-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
               >
-                <Calculator /> PDF İndir
+                <Calculator size={20} /> PDF İndir
               </button>
             </div>
           </motion.div>
         </main>
 
-        <div className="bg-white text-black py-3 border-t-4 border-white mt-20 overflow-hidden whitespace-nowrap">
-          <div className="animate-marquee-reverse font-bold text-lg uppercase">
-            ANALIZ ET • KARAR VER • HAREKETE GEÇ • ANALIZ ET • KARAR VER • HAREKETE GEÇ • 
+        <div className="bg-white text-black py-2 sm:py-3 border-t-2 sm:border-t-4 border-white mt-12 sm:mt-20 overflow-hidden whitespace-nowrap">
+          <div className="animate-marquee-reverse font-bold text-xs sm:text-lg uppercase tracking-wider">
+            ANALIZ ET • KARAR VER • HAREKETE GEÇ • ANALIZ ET • KARAR VER • HAREKETE GEÇ • ANALIZ ET • KARAR VER • HAREKETE GEÇ • 
           </div>
         </div>
       </div>
@@ -494,220 +501,216 @@ const RatioLanding = () => {
 
   // ANA EKRAN
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden font-main">
+    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+      {/* Inline Fonts */}
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+      
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
         .font-display { font-family: 'Syne', sans-serif; }
-        .font-main { font-family: 'Space Grotesk', sans-serif; }
         @keyframes marquee {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .animate-marquee {
           display: inline-block;
-          animation: marquee 20s linear infinite;
+          animation: marquee 25s linear infinite;
         }
         .animate-marquee-reverse {
           display: inline-block;
-          animation: marquee 20s linear infinite reverse;
+          animation: marquee 25s linear infinite reverse;
         }
         .text-stroke {
-          -webkit-text-stroke: 2px #ccff00;
+          -webkit-text-stroke: 1.5px #ccff00;
           color: transparent;
+        }
+        @media (max-width: 768px) {
+          .text-stroke {
+            -webkit-text-stroke: 1px #ccff00;
+          }
         }
       `}</style>
 
-      <div className="fixed inset-0 z-0 opacity-10 pointer-events-none [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:40px_40px]"></div>
+      <div className="fixed inset-0 z-0 opacity-10 pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.05) 1px,transparent 1px)',
+        backgroundSize: '40px 40px'
+      }}></div>
       
       <div className="relative z-10 bg-white text-black py-2 border-b-4 border-white overflow-hidden whitespace-nowrap">
-        <div className="animate-marquee font-bold text-sm uppercase">
-          KARAR VERMEK ZOR GELİYOR? • YAPAY ZEKA SANA YARDIM ETSİN • RASYONEL ANALIZ • IÇINDEKI IKILEMI ÇÖZ • 
+        <div className="animate-marquee font-bold text-xs sm:text-sm uppercase tracking-wider">
+          KARAR VERMEK ZOR GELIYOR? • YAPAY ZEKA SANA YARDIM ETSIN • RASYONEL ANALIZ • IÇINDEKI IKILEMI ÇÖZ • KARAR VERMEK ZOR GELIYOR? • YAPAY ZEKA SANA YARDIM ETSIN • 
         </div>
       </div>
 
-      <nav className="relative z-10 border-b-4 border-white bg-black p-6">
+      <nav className="relative z-10 border-b-4 border-white bg-black p-4 sm:p-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white flex items-center justify-center border-4 border-white shadow-[8px_8px_0px_0px_white] hover:shadow-[8px_8px_0px_0px_#ccff00] hover:border-[#ccff00] transition-all cursor-pointer">
-              <Brain size={32} className="text-black" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 bg-white flex items-center justify-center border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_white] sm:shadow-[8px_8px_0px_0px_white] hover:shadow-[4px_4px_0px_0px_#ccff00] sm:hover:shadow-[8px_8px_0px_0px_#ccff00] hover:border-[#ccff00] transition-all cursor-pointer">
+              <Brain size={24} className="text-black sm:w-8 sm:h-8" />
             </div>
-            <span className="text-3xl font-display font-black tracking-tighter">RATIO AI</span>
+            <span className="text-xl sm:text-3xl font-display font-black tracking-tighter">RATIO AI</span>
           </div>
-          <div className="hidden md:flex items-center gap-6">
-            <span className="text-gray-400 font-mono">v2.0.4</span>
+          <div className="hidden sm:flex items-center gap-6">
+            <span className="text-gray-400 font-mono text-sm">v2.0.4</span>
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse"></div>
           </div>
         </div>
       </nav>
 
-      <main className="relative z-10 max-w-6xl mx-auto px-6 py-16">
-        <div className="mb-20">
-          <h1 className="font-display font-black text-6xl md:text-8xl leading-none mb-8">
+      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-16">
+        {/* Hero - Küçültülmüş font boyutları */}
+        <div className="mb-12 sm:mb-20">
+          <h1 className="font-display font-black text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-none mb-4 sm:mb-8">
             IÇINDEKI<br />
             <span className="text-stroke">IKILEMI</span><br />
             DÖK.
           </h1>
-          <p className="text-xl text-gray-400 max-w-xl border-l-4 border-white pl-6 font-mono">
+          <p className="text-base sm:text-xl text-gray-400 max-w-xl border-l-2 sm:border-l-4 border-white pl-4 sm:pl-6 font-mono">
             Karar verme sürecini yapay zeka ile rasyonelleştir. En dogru seçimi verilerle yap.
           </p>
         </div>
 
         {error && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 border-4 border-[#ff0066] bg-[#ff0066]/20 p-4 text-[#ff0066] font-bold uppercase">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8 border-2 sm:border-4 border-[#ff0066] bg-[#ff0066]/20 p-3 sm:p-4 text-[#ff0066] font-bold uppercase text-xs sm:text-sm">
             {error}
           </motion.div>
         )}
 
-        <div className="border-4 border-white shadow-[8px_8px_0px_0px_white] bg-black p-8 md:p-12 mb-16 max-w-3xl hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#ccff00] hover:border-[#ccff00] transition-all">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-white flex items-center justify-center">
-              <Sparkles size={24} className="text-black" />
+        <div className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_white] sm:shadow-[8px_8px_0px_0px_white] bg-black p-4 sm:p-8 md:p-12 mb-8 sm:mb-16 max-w-3xl hover:translate-x-[-2px] sm:hover:translate-x-[-4px] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-[6px_6px_0px_0px_#ccff00] sm:hover:shadow-[12px_12px_0px_0px_#ccff00] hover:border-[#ccff00] transition-all">
+          <div className="flex items-center gap-3 mb-4 sm:mb-8">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white flex items-center justify-center">
+              <Sparkles size={20} className="text-black sm:w-6 sm:h-6" />
             </div>
-            <h2 className="text-3xl font-display font-bold uppercase">DÜŞUNCEN NEDIR?</h2>
+            <h2 className="text-xl sm:text-3xl font-display font-bold uppercase">DÜŞUNCEN NEDIR?</h2>
           </div>
           
           <textarea 
-            className="w-full h-48 border-4 border-white bg-transparent p-6 text-lg resize-none focus:outline-none focus:border-[#0066ff] focus:shadow-[6px_6px_0px_0px_#0066ff] transition-all font-mono text-white placeholder:text-gray-600"
+            className="w-full h-32 sm:h-48 border-2 sm:border-4 border-white bg-transparent p-3 sm:p-6 text-sm sm:text-lg resize-none focus:outline-none focus:border-[#0066ff] focus:shadow-[3px_3px_0px_0px_#0066ff] sm:focus:shadow-[6px_6px_0px_0px_#0066ff] transition-all font-mono text-white placeholder:text-gray-600"
             placeholder="Örn: Starbucks'tan her gün kahve almak yerine..."
             value={thought}
             onChange={(e) => setThought(e.target.value)}
             maxLength={500}
           ></textarea>
           
-          <div className="flex items-center justify-between mt-6">
+          <div className="flex items-center justify-between mt-4 sm:mt-6">
             <button 
               onClick={startListening}
-              className="flex items-center gap-3 px-6 py-3 border-2 border-white hover:bg-white hover:text-black transition-colors font-bold uppercase"
+              className="flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 border-2 border-white hover:bg-white hover:text-black transition-colors font-bold uppercase text-xs sm:text-sm"
             >
-              <Mic size={20} />
+              <Mic size={16} className="sm:w-5 sm:h-5" />
               SESLE ANLAT
             </button>
-            <span className="text-gray-500 font-mono">{thought.length}/500</span>
+            <span className="text-gray-500 font-mono text-xs sm:text-sm">{thought.length}/500</span>
           </div>
         </div>
 
-        <div className="mb-12">
-          <div className="flex items-center gap-4 mb-10">
+        <div className="mb-8 sm:mb-12">
+          <div className="flex items-center gap-2 sm:gap-4 mb-6 sm:mb-10">
             <div className="h-1 bg-white flex-1"></div>
-            <span className="font-display font-bold text-xl uppercase">NEREDEN BAŞLAMALI?</span>
+            <span className="font-display font-bold text-sm sm:text-xl uppercase text-center">NEREDEN BAŞLAMALI?</span>
             <div className="h-1 bg-white flex-1"></div>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="border-4 border-white shadow-[8px_8px_0px_0px_white] bg-black p-6 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#ccff00] hover:border-[#ccff00] transition-all group">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-green-400 flex items-center justify-center">
-                  <Wallet size={20} className="text-black"/>
-                </div>
-                <h3 className="font-display font-bold text-xl uppercase">FINANSAL IKILEMLER</h3>
-              </div>
-              <div className="space-y-3">
-                {[
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+            {[
+              { 
+                icon: Wallet, 
+                color: 'bg-green-400', 
+                hoverColor: '#ccff00', 
+                title: 'FINANSAL IKILEMLER',
+                items: [
                   "Dişaridan yemek söylemek vs Evde yemek yapmak",
                   "Yeni telefon almak vs Mevcut olani tamir ettirmek",
                   "Araba satın almak vs Taksi/Toplu taşima"
-                ].map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => handleCategoryClick(item)}
-                    className="bg-white text-black p-3 font-bold uppercase text-xs cursor-pointer hover:bg-[#ccff00] hover:rotate-[-2deg] transition-all"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-4 border-white shadow-[8px_8px_0px_0px_white] bg-black p-6 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#0066ff] hover:border-[#0066ff] transition-all group">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-blue-400 flex items-center justify-center">
-                  <Briefcase size={20} className="text-black"/>
-                </div>
-                <h3 className="font-display font-bold text-xl uppercase">KARIYER & EĞITIM</h3>
-              </div>
-              <div className="space-y-3">
-                {[
+                ]
+              },
+              { 
+                icon: Briefcase, 
+                color: 'bg-blue-400', 
+                hoverColor: '#0066ff', 
+                title: 'KARIYER & EĞITIM',
+                items: [
                   "Yurtdişinda yüksek lisans vs Türkiye'de işe girmek",
                   "Kurumsal işe devam etmek vs Kendi işini kurmak",
                   "Yeni dil öğrenmek vs Mevcut yetenekleri geliştirmek"
-                ].map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => handleCategoryClick(item)}
-                    className="bg-white text-black p-3 font-bold uppercase text-xs cursor-pointer hover:bg-[#0066ff] hover:text-white hover:rotate-[2deg] transition-all"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-4 border-white shadow-[8px_8px_0px_0px_white] bg-black p-6 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#ff0066] hover:border-[#ff0066] transition-all group">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-pink-400 flex items-center justify-center">
-                  <Heart size={20} className="text-black"/>
-                </div>
-                <h3 className="font-display font-bold text-xl uppercase">YAŞAM TARZI</h3>
-              </div>
-              <div className="space-y-3">
-                {[
+                ]
+              },
+              { 
+                icon: Heart, 
+                color: 'bg-pink-400', 
+                hoverColor: '#ff0066', 
+                title: 'YAŞAM TARZI',
+                items: [
                   "Spor salonu üyeliği vs Evde egzersiz yapmak",
                   "Şehir merkezinde yaşamak vs Şehir dişinda bahçeli ev",
                   "Hafta sonu tatile gitmek vs Evde dinlenmek"
-                ].map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => handleCategoryClick(item)}
-                    className="bg-white text-black p-3 font-bold uppercase text-xs cursor-pointer hover:bg-[#ff0066] hover:text-white hover:rotate-[-1deg] transition-all"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-4 border-white shadow-[8px_8px_0px_0px_white] bg-black p-6 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#ffcc00] hover:border-[#ffcc00] transition-all group">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-orange-400 flex items-center justify-center">
-                  <Repeat size={20} className="text-black"/>
-                </div>
-                <h3 className="font-display font-bold text-xl uppercase">ALIŞKANLIKLAR</h3>
-              </div>
-              <div className="space-y-3">
-                {[
+                ]
+              },
+              { 
+                icon: Repeat, 
+                color: 'bg-orange-400', 
+                hoverColor: '#ffcc00', 
+                title: 'ALIŞKANLIKLAR',
+                items: [
                   "Her gün kahve satın almak vs Evde demlemek",
                   "Sigarayi birakmak vs Devam etmek (Maliyet/Sağlik)",
                   "Abonelik servislerini (Netflix vb.) iptal etmek"
-                ].map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => handleCategoryClick(item)}
-                    className="bg-white text-black p-3 font-bold uppercase text-xs cursor-pointer hover:bg-[#ffcc00] hover:rotate-[1deg] transition-all"
-                  >
-                    {item}
+                ]
+              }
+            ].map((category, idx) => (
+              <div 
+                key={idx} 
+                className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_white] sm:shadow-[8px_8px_0px_0px_white] bg-black p-4 sm:p-6 hover:translate-x-[-2px] sm:hover:translate-x-[-4px] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] transition-all group"
+                style={{ 
+                  ':hover': {
+                    boxShadow: `6px 6px 0px 0px ${category.hoverColor}`,
+                    borderColor: category.hoverColor
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 ${category.color} flex items-center justify-center`}>
+                    <category.icon size={16} className="text-black sm:w-5 sm:h-5" />
                   </div>
-                ))}
+                  <h3 className="font-display font-bold text-base sm:text-xl uppercase">{category.title}</h3>
+                </div>
+                <div className="space-y-2 sm:space-y-3">
+                  {category.items.map((item, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => handleCategoryClick(item)}
+                      className="bg-white text-black p-2 sm:p-3 font-bold uppercase text-[10px] sm:text-xs cursor-pointer transition-all hover:rotate-[-1deg] sm:hover:rotate-[-2deg]"
+                      style={{ 
+                        ':hover': { 
+                          backgroundColor: category.hoverColor,
+                          color: category.hoverColor === '#ccff00' || category.hoverColor === '#ffcc00' ? 'black' : 'white'
+                        } 
+                      }}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        <div className="flex justify-center py-12">
+        <div className="flex justify-center py-6 sm:py-12">
           <button 
             onClick={handleCalculate}
             disabled={loading}
-            className={`bg-[#0066ff] border-4 border-white shadow-[8px_8px_0px_0px_white] transition-all px-16 py-8 text-2xl font-black flex items-center gap-4 uppercase font-display
-            ${loading ? 'opacity-70 cursor-wait' : 'hover:bg-[#ff0066] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#ccff00] active:translate-x-[4px] active:translate-y-[4px]'}`}
+            className={`bg-[#0066ff] border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_white] sm:shadow-[8px_8px_0px_0px_white] transition-all px-8 sm:px-16 py-4 sm:py-8 text-lg sm:text-2xl font-black flex items-center gap-2 sm:gap-4 uppercase font-display
+            ${loading ? 'opacity-70 cursor-wait' : 'hover:bg-[#ff0066] hover:translate-x-[-2px] sm:hover:translate-x-[-4px] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-[6px_6px_0px_0px_#ccff00] sm:hover:shadow-[12px_12px_0px_0px_#ccff00] active:translate-x-[2px] sm:active:translate-x-[4px] active:translate-y-[2px] sm:active:translate-y-[4px]'}`}
           >
-            <Zap size={32} className={loading ? 'animate-bounce text-[#ccff00]' : ''} />
+            <Zap size={24} className={`${loading ? 'animate-bounce text-[#ccff00]' : ''} sm:w-8 sm:h-8`} />
             {loading ? 'ANALIZ EDILIYOR...' : 'RASYONEL ANALIZI BAŞLAT'}
           </button>
         </div>
       </main>
 
-      <div className="bg-white text-black py-3 border-t-4 border-white mt-20 overflow-hidden whitespace-nowrap">
-        <div className="animate-marquee-reverse font-bold text-lg uppercase">
-          ANALIZ ET • KARAR VER • HAREKETE GEÇ • ANALIZ ET • KARAR VER • HAREKETE GEÇ • 
+      <div className="bg-white text-black py-2 sm:py-3 border-t-2 sm:border-t-4 border-white mt-12 sm:mt-20 overflow-hidden whitespace-nowrap">
+        <div className="animate-marquee-reverse font-bold text-xs sm:text-lg uppercase tracking-wider">
+          ANALIZ ET • KARAR VER • HAREKETE GEÇ • ANALIZ ET • KARAR VER • HAREKETE GEÇ • ANALIZ ET • KARAR VER • HAREKETE GEÇ • 
         </div>
       </div>
     </div>
