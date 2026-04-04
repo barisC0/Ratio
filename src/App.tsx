@@ -624,10 +624,7 @@ const RatioLanding = () => {
             </div>
             <span className="text-xl sm:text-3xl font-display font-black tracking-tighter">RATIO AI</span>
           </div>
-          <div className="hidden sm:flex items-center gap-6">
-            <span className="text-gray-400 font-mono text-sm">v2.0.4</span>
-            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse"></div>
-          </div>
+
         </div>
       </nav>
 
