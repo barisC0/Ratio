@@ -3,8 +3,40 @@ import { Brain, Sparkles, Mic, Wallet, Briefcase, Heart, Repeat, Zap } from 'luc
 
 const RatioLanding = () => {
   const [text, setText] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+
+  const handleStartAnalysis = () => {
+    if (!text.trim()) return alert("Bir şeyler yazmalısın!");
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      setShowResult(true);
+    }, 2500);
+  };
 
   return (
+    if (showResult) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-10 font-main">
+        <h2 className="text-6xl font-black mb-6 text-stroke uppercase">Analiz Tamamlandı</h2>
+        <div className="border-4 border-white p-8 bg-black shadow-[10px_10px_0px_0px_#ccff00] max-w-2xl text-center">
+          <p className="text-2xl font-mono mb-4 italic">"{text}"</p>
+          <p className="text-[#0066ff] text-3xl font-black uppercase">Karar: Rasyonel olarak mantıklı.</p>
+        </div>
+        <button 
+          onClick={() => setShowResult(false)}
+          className="mt-12 border-4 border-white bg-white text-black px-10 py-4 font-black text-xl hover:bg-[#ff0066] hover:text-white transition-all shadow-[6px_6px_0px_0px_#0066ff]"
+        >
+          YENİ ANALİZ YAP
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
+      {/* Buradan aşağısı senin mevcut tasarım kodun devam edecek... */}
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
       {/* Özel CSS Animasyonları */}
       <style dangerouslySetInnerHTML={{ __html: `
@@ -130,10 +162,15 @@ const RatioLanding = () => {
 
         {/* CTA Buton */}
         <div className="flex justify-center py-12">
-          <button className="bg-[#0066ff] border-4 border-white shadow-[8px_8px_0px_0px_white] hover:bg-[#ff0066] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#ccff00] active:translate-x-[4px] active:translate-y-[4px] transition-all px-16 py-8 text-2xl font-black flex items-center gap-4 uppercase">
-            <Zap size={32} />
-            RASYONEL ANALİZİ BAŞLAT
-          </button>
+         <button 
+  onClick={handleStartAnalysis}
+  disabled={isAnalyzing}
+  className={`bg-[#0066ff] border-4 border-white shadow-[8px_8px_0px_0px_white] transition-all px-16 py-8 text-2xl font-black flex items-center gap-4 uppercase
+  ${isAnalyzing ? 'opacity-70 cursor-wait' : 'hover:bg-[#ff0066] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_#ccff00] active:translate-x-[4px] active:translate-y-[4px]'}`}
+>
+  <Zap size={32} className={isAnalyzing ? 'animate-bounce text-[#ccff00]' : ''} />
+  {isAnalyzing ? 'ANALİZ EDİLİYOR...' : 'RASYONEL ANALİZİ BAŞLAT'}
+</button>
         </div>
       </main>
 
