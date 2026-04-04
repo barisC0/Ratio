@@ -9,28 +9,41 @@ import autoTable from "jspdf-autotable";
 const analyzeDecision = async (text) => {
   await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // İkilemi parse et
+  // İkilemi parse et — çok daha geniş separator listesi
   const parseOptions = (text) => {
-    const separators = /\s+(?:vs|veya|karşısında|yerine|mi\s+mı|mu\s+mu)\s+/i;
-    const parts = text.split(separators);
+    // Önce "X mi Y mi" / "X mu Y mu" gibi kalıpları dene
+    const miMiMatch = text.match(/^(.+?)\s+m[iıuü]\s+(.+?)\s+m[iıuü]\??$/i);
+    if (miMiMatch) {
+      return {
+        nameA: miMiMatch[1].trim().substring(0, 40),
+        nameB: miMiMatch[2].trim().substring(0, 40)
+      };
+    }
+
+    // Separator tabanlı bölme
+    const separatorRegex = /\s+(?:vs\.?|veya|karşısında|yerine|mi\s+mı|mu\s+mu|mı\s+mi|mü\s+mü|yoksa|ya\s+da)\s+/i;
+    const parts = text.split(separatorRegex);
     
     if (parts.length >= 2) {
       return {
-        nameA: parts[0].trim().substring(0, 35),
-        nameB: parts[1].trim().substring(0, 35)
+        nameA: parts[0].trim().substring(0, 40),
+        nameB: parts[1].trim().substring(0, 40)
       };
     }
-    
-    // Fallback
-    return { nameA: 'Seçenek A', nameB: 'Seçenek B' };
+
+    // Son çare: cümleyi ortadan böl
+    const words = text.trim().split(/\s+/);
+    const mid = Math.floor(words.length / 2);
+    return {
+      nameA: words.slice(0, mid).join(' ').substring(0, 40),
+      nameB: words.slice(mid).join(' ').substring(0, 40)
+    };
   };
   
   const options = parseOptions(text);
   
-  // Skorları rastgele ama tutarlı üret (A veya B kazansın)
   const winner = Math.random() > 0.5 ? 'A' : 'B';
   
-  // Dinamik skorlar
   const scoreA = winner === 'A' ? Math.floor(Math.random() * 3) + 7 : Math.floor(Math.random() * 4) + 3;
   const scoreB = winner === 'B' ? Math.floor(Math.random() * 3) + 7 : Math.floor(Math.random() * 4) + 3;
   
@@ -93,6 +106,7 @@ ${winner === 'A' ? options.nameB : options.nameA} alternatifinin getirdiği beli
 Analiz sonucunda **${winner === 'A' ? options.nameA : options.nameB}** tercihi önerilmektedir.`
   };
 };
+
 const RatioLanding = () => {
   const [thought, setThought] = useState('');
   const [loading, setLoading] = useState(false);
@@ -160,7 +174,7 @@ const RatioLanding = () => {
     const AMBER = [217, 119, 6];
     const AMBER_L = [254, 243, 199];
 
-    const tr = (s) => s
+    const tr = (s) => String(s)
       .replace(/ğ/g,'g').replace(/Ğ/g,'G')
       .replace(/ü/g,'u').replace(/Ü/g,'U')
       .replace(/ş/g,'s').replace(/Ş/g,'S')
@@ -168,8 +182,8 @@ const RatioLanding = () => {
       .replace(/ö/g,'o').replace(/Ö/g,'O')
       .replace(/ç/g,'c').replace(/Ç/g,'C');
 
-    const nameA = tr(analysis.extractedOptions?.nameA || 'Secenek A');
-    const nameB = tr(analysis.extractedOptions?.nameB || 'Secenek B');
+    const nameA = tr(analysis.extractedOptions?.nameA || 'Secim 1');
+    const nameB = tr(analysis.extractedOptions?.nameB || 'Secim 2');
 
     const addFooter = () => {
       const n = doc.internal.getNumberOfPages();
@@ -405,7 +419,6 @@ const RatioLanding = () => {
   if (result) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-        {/* Inline Fonts - CDN'den yükleme sorununu önler */}
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         
         <style>{`
@@ -459,7 +472,8 @@ const RatioLanding = () => {
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6 sm:space-y-8">
             
             {/* Özet Kartı */}
-            <div className={`border-2 sm:border-4 border-white p-4 sm:p-8 shadow-[6px_6px_0px_0px_${result.winner === 'A' ? '#0066ff' : '#ff0066'}] sm:shadow-[10px_10px_0px_0px_${result.winner === 'A' ? '#0066ff' : '#ff0066'}] max-w-4xl mx-auto ${result.winner === 'A' ? 'bg-blue-950' : 'bg-purple-950'}`}>
+            <div className={`border-2 sm:border-4 border-white p-4 sm:p-8 max-w-4xl mx-auto ${result.winner === 'A' ? 'bg-blue-950' : 'bg-purple-950'}`}
+              style={{ boxShadow: result.winner === 'A' ? '10px 10px 0px 0px #0066ff' : '10px 10px 0px 0px #ff0066' }}>
               <h2 className="text-3xl sm:text-5xl font-black mb-4 sm:mb-6 text-stroke uppercase font-display text-center">Analiz Tamamlandı</h2>
               <p className="text-base sm:text-2xl font-mono mb-4 sm:mb-6 text-center italic break-words">"{thought}"</p>
               <div className="h-1 bg-white mb-4 sm:mb-6"></div>
@@ -472,9 +486,13 @@ const RatioLanding = () => {
             {/* Karşılaştırma Tablosu */}
             <div className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_white] sm:shadow-[8px_8px_0px_0px_white] bg-black overflow-hidden">
               <div className="grid grid-cols-3 border-b-2 sm:border-b-4 border-white text-xs sm:text-base">
-                <div className="bg-slate-800 p-2 sm:p-4 font-bold uppercase">Metrik</div>
-                <div className="bg-[#0066ff] p-2 sm:p-4 font-bold uppercase text-center border-l-2 sm:border-l-4 border-white">{result.extractedOptions.nameA}</div>
-                <div className="bg-[#ff0066] p-2 sm:p-4 font-bold uppercase text-center border-l-2 sm:border-l-4 border-white">{result.extractedOptions.nameB}</div>
+                <div className="bg-slate-800 p-2 sm:p-4 font-bold uppercase text-gray-400 text-xs tracking-wider">Metrik</div>
+                <div className="bg-[#0066ff] p-2 sm:p-4 font-bold uppercase text-center border-l-2 sm:border-l-4 border-white text-xs sm:text-sm truncate">
+                  {result.extractedOptions.nameA}
+                </div>
+                <div className="bg-[#ff0066] p-2 sm:p-4 font-bold uppercase text-center border-l-2 sm:border-l-4 border-white text-xs sm:text-sm truncate">
+                  {result.extractedOptions.nameB}
+                </div>
               </div>
               {result.comparisonTable.map((row, i) => (
                 <div key={i} className={`grid grid-cols-3 border-b border-white/20 text-xs sm:text-base ${i % 2 === 0 ? 'bg-white/5' : 'bg-white/10'}`}>
@@ -524,25 +542,26 @@ const RatioLanding = () => {
                 <Zap /> Nihai Tavsiye
               </h3>
               <div className="text-sm sm:text-xl leading-relaxed text-gray-300 font-mono whitespace-pre-wrap">
-  {result.finalRecommendation.split('**').map((part, i) => 
-    i % 2 === 0 ? part : <span key={i} className="text-[#ccff00] font-bold">{part}</span>
-  )}
-</div>
+                {result.finalRecommendation.split('**').map((part, i) => 
+                  i % 2 === 0 ? part : <span key={i} className="text-[#ccff00] font-bold">{part}</span>
+                )}
+              </div>
 
-            {/* Butonlar */}
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 pt-4 sm:pt-8">
-              <button 
-                onClick={reset}
-                className="border-2 sm:border-4 border-white bg-white text-black px-6 sm:px-10 py-3 sm:py-4 font-black text-base sm:text-xl hover:bg-[#ff0066] hover:text-white transition-all shadow-[4px_4px_0px_0px_#0066ff] sm:shadow-[6px_6px_0px_0px_#0066ff] font-display uppercase flex items-center gap-2 sm:gap-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-              >
-                <RefreshCcw size={20} /> Yeni Analiz
-              </button>
-              <button 
-                onClick={() => downloadPDF(result)}
-                className="border-2 sm:border-4 border-white bg-[#0066ff] text-white px-6 sm:px-10 py-3 sm:py-4 font-black text-base sm:text-xl hover:bg-[#ccff00] hover:text-black transition-all shadow-[4px_4px_0px_0px_white] sm:shadow-[6px_6px_0px_0px_white] font-display uppercase flex items-center gap-2 sm:gap-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-              >
-                <Calculator size={20} /> PDF İndir
-              </button>
+              {/* Butonlar */}
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 pt-4 sm:pt-8">
+                <button 
+                  onClick={reset}
+                  className="border-2 sm:border-4 border-white bg-white text-black px-6 sm:px-10 py-3 sm:py-4 font-black text-base sm:text-xl hover:bg-[#ff0066] hover:text-white transition-all shadow-[4px_4px_0px_0px_#0066ff] sm:shadow-[6px_6px_0px_0px_#0066ff] font-display uppercase flex items-center gap-2 sm:gap-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                >
+                  <RefreshCcw size={20} /> Yeni Analiz
+                </button>
+                <button 
+                  onClick={() => downloadPDF(result)}
+                  className="border-2 sm:border-4 border-white bg-[#0066ff] text-white px-6 sm:px-10 py-3 sm:py-4 font-black text-base sm:text-xl hover:bg-[#ccff00] hover:text-black transition-all shadow-[4px_4px_0px_0px_white] sm:shadow-[6px_6px_0px_0px_white] font-display uppercase flex items-center gap-2 sm:gap-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                >
+                  <Calculator size={20} /> PDF İndir
+                </button>
+              </div>
             </div>
           </motion.div>
         </main>
@@ -559,7 +578,6 @@ const RatioLanding = () => {
   // ANA EKRAN
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-      {/* Inline Fonts */}
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       
       <style>{`
@@ -614,7 +632,6 @@ const RatioLanding = () => {
       </nav>
 
       <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-16">
-        {/* Hero - Küçültülmüş font boyutları */}
         <div className="mb-12 sm:mb-20">
           <h1 className="font-display font-black text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-none mb-4 sm:mb-8">
             IÇINDEKI<br />
@@ -642,7 +659,7 @@ const RatioLanding = () => {
           
           <textarea 
             className="w-full h-32 sm:h-48 border-2 sm:border-4 border-white bg-transparent p-3 sm:p-6 text-sm sm:text-lg resize-none focus:outline-none focus:border-[#0066ff] focus:shadow-[3px_3px_0px_0px_#0066ff] sm:focus:shadow-[6px_6px_0px_0px_#0066ff] transition-all font-mono text-white placeholder:text-gray-600"
-            placeholder="Örn: Starbucks'tan her gün kahve almak yerine..."
+            placeholder="Örn: Starbucks'tan her gün kahve almak vs evde kahve yapmak..."
             value={thought}
             onChange={(e) => setThought(e.target.value)}
             maxLength={500}
@@ -672,58 +689,45 @@ const RatioLanding = () => {
               { 
                 icon: Wallet, 
                 color: 'bg-green-400', 
-                hoverColor: '#ccff00', 
                 title: 'FINANSAL IKILEMLER',
                 items: [
-                  "Dişaridan yemek söylemek vs Evde yemek yapmak",
-                  "Yeni telefon almak vs Mevcut olani tamir ettirmek",
-                  "Araba satın almak vs Taksi/Toplu taşima"
+                  "Dışarıdan yemek söylemek vs evde yemek yapmak",
+                  "Yeni telefon almak vs mevcut olanı tamir ettirmek",
+                  "Araba satın almak vs taksi/toplu taşıma"
                 ]
               },
               { 
                 icon: Briefcase, 
                 color: 'bg-blue-400', 
-                hoverColor: '#0066ff', 
                 title: 'KARIYER & EĞITIM',
                 items: [
-                  "Yurtdişinda yüksek lisans vs Türkiye'de işe girmek",
-                  "Kurumsal işe devam etmek vs Kendi işini kurmak",
-                  "Yeni dil öğrenmek vs Mevcut yetenekleri geliştirmek"
+                  "Yurtdışında yüksek lisans vs Türkiye'de işe girmek",
+                  "Kurumsal işe devam etmek vs kendi işini kurmak",
+                  "Yeni dil öğrenmek vs mevcut yetenekleri geliştirmek"
                 ]
               },
               { 
                 icon: Heart, 
                 color: 'bg-pink-400', 
-                hoverColor: '#ff0066', 
                 title: 'YAŞAM TARZI',
                 items: [
-                  "Spor salonu üyeliği vs Evde egzersiz yapmak",
-                  "Şehir merkezinde yaşamak vs Şehir dişinda bahçeli ev",
-                  "Hafta sonu tatile gitmek vs Evde dinlenmek"
+                  "Spor salonu üyeliği vs evde egzersiz yapmak",
+                  "Şehir merkezinde yaşamak vs şehir dışında bahçeli ev",
+                  "Hafta sonu tatile gitmek vs evde dinlenmek"
                 ]
               },
               { 
                 icon: Repeat, 
                 color: 'bg-orange-400', 
-                hoverColor: '#ffcc00', 
                 title: 'ALIŞKANLIKLAR',
                 items: [
-                  "Her gün kahve satın almak vs Evde demlemek",
-                  "Sigarayi birakmak vs Devam etmek (Maliyet/Sağlik)",
-                  "Abonelik servislerini (Netflix vb.) iptal etmek"
+                  "Her gün kahve satın almak vs evde demlemek",
+                  "Sigarayı bırakmak vs devam etmek",
+                  "Netflix aboneliğini iptal etmek vs devam etmek"
                 ]
               }
             ].map((category, idx) => (
-              <div 
-                key={idx} 
-                className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_white] sm:shadow-[8px_8px_0px_0px_white] bg-black p-4 sm:p-6 hover:translate-x-[-2px] sm:hover:translate-x-[-4px] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] transition-all group"
-                style={{ 
-                  ':hover': {
-                    boxShadow: `6px 6px 0px 0px ${category.hoverColor}`,
-                    borderColor: category.hoverColor
-                  }
-                }}
-              >
+              <div key={idx} className="border-2 sm:border-4 border-white shadow-[4px_4px_0px_0px_white] sm:shadow-[8px_8px_0px_0px_white] bg-black p-4 sm:p-6 transition-all">
                 <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                   <div className={`w-8 h-8 sm:w-10 sm:h-10 ${category.color} flex items-center justify-center`}>
                     <category.icon size={16} className="text-black sm:w-5 sm:h-5" />
@@ -735,13 +739,7 @@ const RatioLanding = () => {
                     <div 
                       key={i} 
                       onClick={() => handleCategoryClick(item)}
-                      className="bg-white text-black p-2 sm:p-3 font-bold uppercase text-[10px] sm:text-xs cursor-pointer transition-all hover:rotate-[-1deg] sm:hover:rotate-[-2deg]"
-                      style={{ 
-                        ':hover': { 
-                          backgroundColor: category.hoverColor,
-                          color: category.hoverColor === '#ccff00' || category.hoverColor === '#ffcc00' ? 'black' : 'white'
-                        } 
-                      }}
+                      className="bg-white text-black p-2 sm:p-3 font-bold uppercase text-[10px] sm:text-xs cursor-pointer transition-all hover:bg-[#ccff00] hover:rotate-[-1deg]"
                     >
                       {item}
                     </div>
