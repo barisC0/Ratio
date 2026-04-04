@@ -10,30 +10,49 @@ const analyzeDecision = async (text) => {
   await new Promise(resolve => setTimeout(resolve, 2000));
   
   return {
-    summary: `"${text.substring(0, 50)}..." ikileminde rasyonel analiz sonucu: Seçenek A (Mevcut durumu koruma) uzun vadede daha avantajlı görünüyor.`,
-    winner: 'A',
-    extractedOptions: {
-      nameA: 'Mevcut Durum',
-      nameB: 'Yeni Seçenek'
-    },
+    summary: `"${options.nameA}" vs "${options.nameB}" karşılaştırmasında: ${options.nameA} uzun vadede daha avantajlı görünüyor.`
+    const parseOptions = (text) => {
+  // "vs", "veya", "karşısında", "yerine" göre split
+  const separators = /\s+(?:vs|veya|karşısında|yerine|mi\s+mı|mu\s+mu)\s+/i;
+  const parts = text.split(separators);
+  
+  if (parts.length >= 2) {
+    return {
+      nameA: parts[0].trim().substring(0, 30), // max 30 karakter
+      nameB: parts[1].trim().substring(0, 30)
+    };
+  }
+  
+  // Parse edilemezse fallback
+  return {
+    nameA: 'Seçenek 1',
+    nameB: 'Seçenek 2'
+  };
+};
+
+// Kullanım:
+const options = parseOptions(text);
+// ...
+extractedOptions: options,
     comparisonTable: [
-      { metric: 'Maliyet', optionA: 'Düşük', optionB: 'Yüksek' },
-      { metric: 'Zaman', optionA: 'Hızlı', optionB: 'Yavaş' },
-      { metric: 'Risk', optionA: 'Az', optionB: 'Çok' },
-      { metric: 'Getiri', optionA: 'Orta', optionB: 'Yüksek' }
-    ],
+  { metric: 'Maliyet/Ekonomi', optionA: 'Daha uygun', optionB: 'Daha pahalı' },
+  { metric: 'Zaman/Hız', optionA: 'Hızlı', optionB: 'Yavaş' },
+  { metric: 'Risk/Kolaylık', optionA: 'Güvenli', optionB: 'Riskli' },
+  { metric: 'Getiri/Fayda', optionA: 'Orta', optionB: 'Yüksek' },
+  { metric: 'Sürdürülebilirlik', optionA: 'Uzun vadeli', optionB: 'Kısa vadeli' }
+]
     scorecard: [
-      { metric: 'Ekonomik', scoreA: 8, scoreB: 4 },
-      { metric: 'Pratiklik', scoreA: 9, scoreB: 5 },
-      { metric: 'Risk', scoreA: 8, scoreB: 3 },
-      { metric: 'Uzun Vade', scoreA: 7, scoreB: 6 }
-    ],
+  { metric: `${options.nameA} Avantajı`, scoreA: 8, scoreB: 4 },
+  { metric: `${options.nameB} Avantajı`, scoreA: 3, scoreB: 9 },
+  { metric: 'Maliyet-Etkinlik', scoreA: 9, scoreB: 5 },
+  { metric: 'Uygulanabilirlik', scoreA: 8, scoreB: 6 }
+]
     hiddenCosts: [
       'Başlangıç maliyetleri göz ardı edilebilir gibi görünse bile zamanla birikir',
       'Psikolojik uyum süreci maliyetleri hesaba katılmamış olabilir',
       'Fırsat maliyeti: Alternatif kullanımlar değerlendirilmeli'
     ],
-    finalRecommendation: 'Analiz sonucunda **Seçenek A** (Mevcut Durum) rasyonel olarak önerilmektedir. Düşük risk profili ve öngörülebilir maliyet yapısı nedeniyle uzun vadede daha sürdürülebilir bir seçenektir.'
+    finalRecommendation: `Analiz sonucunda **${analysis.winner === 'A' ? options.nameA : options.nameB}** rasyonel olarak önerilmektedir. ${options.nameA} ile ${options.nameB} arasındaki karşılaştırmada, düşük risk profili ve öngörülebilir maliyet yapısı nedeniyle uzun vadede daha sürdürülebilir bir seçenektir.`
   };
 };
 
