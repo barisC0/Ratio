@@ -9,53 +9,90 @@ import autoTable from "jspdf-autotable";
 const analyzeDecision = async (text) => {
   await new Promise(resolve => setTimeout(resolve, 2000));
   
-  return {
-    summary: `"${options.nameA}" vs "${options.nameB}" karşılaştırmasında: ${options.nameA} uzun vadede daha avantajlı görünüyor.`
-    const parseOptions = (text) => {
-  // "vs", "veya", "karşısında", "yerine" göre split
-  const separators = /\s+(?:vs|veya|karşısında|yerine|mi\s+mı|mu\s+mu)\s+/i;
-  const parts = text.split(separators);
-  
-  if (parts.length >= 2) {
-    return {
-      nameA: parts[0].trim().substring(0, 30), // max 30 karakter
-      nameB: parts[1].trim().substring(0, 30)
-    };
-  }
-  
-  // Parse edilemezse fallback
-  return {
-    nameA: 'Seçenek 1',
-    nameB: 'Seçenek 2'
+  // İkilemi parse et
+  const parseOptions = (text) => {
+    const separators = /\s+(?:vs|veya|karşısında|yerine|mi\s+mı|mu\s+mu)\s+/i;
+    const parts = text.split(separators);
+    
+    if (parts.length >= 2) {
+      return {
+        nameA: parts[0].trim().substring(0, 35),
+        nameB: parts[1].trim().substring(0, 35)
+      };
+    }
+    
+    // Fallback
+    return { nameA: 'Seçenek A', nameB: 'Seçenek B' };
   };
-};
-
-// Kullanım:
-const options = parseOptions(text);
-// ...
-extractedOptions: options,
+  
+  const options = parseOptions(text);
+  
+  // Skorları rastgele ama tutarlı üret (A veya B kazansın)
+  const winner = Math.random() > 0.5 ? 'A' : 'B';
+  
+  // Dinamik skorlar
+  const scoreA = winner === 'A' ? Math.floor(Math.random() * 3) + 7 : Math.floor(Math.random() * 4) + 3;
+  const scoreB = winner === 'B' ? Math.floor(Math.random() * 3) + 7 : Math.floor(Math.random() * 4) + 3;
+  
+  return {
+    summary: `"${options.nameA}" ile "${options.nameB}" arasındaki ikileminde **${winner === 'A' ? options.nameA : options.nameB}** rasyonel olarak öne çıkıyor.`,
+    winner: winner,
+    extractedOptions: options,
+    
     comparisonTable: [
-  { metric: 'Maliyet/Ekonomi', optionA: 'Daha uygun', optionB: 'Daha pahalı' },
-  { metric: 'Zaman/Hız', optionA: 'Hızlı', optionB: 'Yavaş' },
-  { metric: 'Risk/Kolaylık', optionA: 'Güvenli', optionB: 'Riskli' },
-  { metric: 'Getiri/Fayda', optionA: 'Orta', optionB: 'Yüksek' },
-  { metric: 'Sürdürülebilirlik', optionA: 'Uzun vadeli', optionB: 'Kısa vadeli' }
-]
-    scorecard: [
-  { metric: `${options.nameA} Avantajı`, scoreA: 8, scoreB: 4 },
-  { metric: `${options.nameB} Avantajı`, scoreA: 3, scoreB: 9 },
-  { metric: 'Maliyet-Etkinlik', scoreA: 9, scoreB: 5 },
-  { metric: 'Uygulanabilirlik', scoreA: 8, scoreB: 6 }
-]
-    hiddenCosts: [
-      'Başlangıç maliyetleri göz ardı edilebilir gibi görünse bile zamanla birikir',
-      'Psikolojik uyum süreci maliyetleri hesaba katılmamış olabilir',
-      'Fırsat maliyeti: Alternatif kullanımlar değerlendirilmeli'
+      { 
+        metric: 'Maliyet/Ekonomi', 
+        optionA: winner === 'A' ? 'Daha uygun' : 'Daha pahalı', 
+        optionB: winner === 'B' ? 'Daha uygun' : 'Daha pahalı' 
+      },
+      { 
+        metric: 'Zaman/Hız', 
+        optionA: winner === 'A' ? 'Hızlı/Verimli' : 'Yavaş/Karmaşık', 
+        optionB: winner === 'B' ? 'Hızlı/Verimli' : 'Yavaş/Karmaşık' 
+      },
+      { 
+        metric: 'Risk/Kolaylık', 
+        optionA: winner === 'A' ? 'Düşük risk' : 'Yüksek risk', 
+        optionB: winner === 'B' ? 'Düşük risk' : 'Yüksek risk' 
+      },
+      { 
+        metric: 'Getiri/Fayda', 
+        optionA: winner === 'A' ? 'Yüksek getiri' : 'Sınırlı getiri', 
+        optionB: winner === 'B' ? 'Yüksek getiri' : 'Sınırlı getiri' 
+      },
+      { 
+        metric: 'Sürdürülebilirlik', 
+        optionA: winner === 'A' ? 'Uzun vadeli' : 'Kısa vadeli', 
+        optionB: winner === 'B' ? 'Uzun vadeli' : 'Kısa vadeli' 
+      }
     ],
-    finalRecommendation: `Analiz sonucunda **${analysis.winner === 'A' ? options.nameA : options.nameB}** rasyonel olarak önerilmektedir. ${options.nameA} ile ${options.nameB} arasındaki karşılaştırmada, düşük risk profili ve öngörülebilir maliyet yapısı nedeniyle uzun vadede daha sürdürülebilir bir seçenektir.`
+    
+    scorecard: [
+      { metric: 'Ekonomik Avantaj', scoreA: winner === 'A' ? 9 : 4, scoreB: winner === 'B' ? 9 : 4 },
+      { metric: 'Pratiklik', scoreA: winner === 'A' ? 8 : 5, scoreB: winner === 'B' ? 8 : 5 },
+      { metric: 'Risk Yönetimi', scoreA: winner === 'A' ? 9 : 3, scoreB: winner === 'B' ? 9 : 3 },
+      { metric: 'Uzun Vade Potansiyeli', scoreA: winner === 'A' ? 8 : 6, scoreB: winner === 'B' ? 8 : 6 }
+    ],
+    
+    hiddenCosts: winner === 'A' ? [
+      `${options.nameB} seçeneğinde görünmeyen başlangıç maliyetleri zamanla birikebilir`,
+      `${options.nameB} için psikolojik uyum süreci ve öğrenme eğrisi maliyetleri`,
+      `${options.nameB} fırsat maliyeti: ${options.nameA} ile kazanılabilecek faydalar`
+    ] : [
+      `${options.nameA} seçeneğinde görünmeyen başlangıç maliyetleri zamanla birikebilir`,
+      `${options.nameA} için psikolojik uyum süreci ve öğrenme eğrisi maliyetleri`,
+      `${options.nameA} fırsat maliyeti: ${options.nameB} ile kazanılabilecek faydalar`
+    ],
+    
+    finalRecommendation: `## ${winner === 'A' ? options.nameA : options.nameB} Önerilir
+
+**${winner === 'A' ? options.nameA : options.nameB}** rasyonel olarak daha güçlü bir seçenektir. 
+
+${winner === 'A' ? options.nameB : options.nameA} alternatifinin getirdiği belirsizlikler ve maliyetler göz önüne alındığında, **${winner === 'A' ? options.nameA : options.nameB}** daha sürdürülebilir bir yol sunmaktadır.
+
+Analiz sonucunda **${winner === 'A' ? options.nameA : options.nameB}** tercihi önerilmektedir.`
   };
 };
-
 const RatioLanding = () => {
   const [thought, setThought] = useState('');
   const [loading, setLoading] = useState(false);
@@ -487,9 +524,10 @@ const RatioLanding = () => {
                 <Zap /> Nihai Tavsiye
               </h3>
               <div className="text-sm sm:text-xl leading-relaxed text-gray-300 font-mono whitespace-pre-wrap">
-                {result.finalRecommendation}
-              </div>
-            </div>
+  {result.finalRecommendation.split('**').map((part, i) => 
+    i % 2 === 0 ? part : <span key={i} className="text-[#ccff00] font-bold">{part}</span>
+  )}
+</div>
 
             {/* Butonlar */}
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 pt-4 sm:pt-8">
