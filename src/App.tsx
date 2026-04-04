@@ -5,105 +5,85 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// Mock analiz fonksiyonu
+// Anthropic API ile gerçek analiz
 const analyzeDecision = async (text) => {
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // İkilemi parse et — çok daha geniş separator listesi
-  const parseOptions = (text) => {
-    // Önce "X mi Y mi" / "X mu Y mu" gibi kalıpları dene
-    const miMiMatch = text.match(/^(.+?)\s+m[iıuü]\s+(.+?)\s+m[iıuü]\??$/i);
-    if (miMiMatch) {
-      return {
-        nameA: miMiMatch[1].trim().substring(0, 40),
-        nameB: miMiMatch[2].trim().substring(0, 40)
-      };
-    }
+  const systemPrompt = `Sen Ratio AI — profesyonel bir karar analisti ve rasyonel düşünce uzmanısın. 
+Kullanıcı sana bir ikilem veya karşılaştırma soruyor. Görevin:
+1. İkilemi doğru parse edip iki seçeneği tespit etmek
+2. Her iki seçenek hakkında gerçek veriler, araştırmalar ve somut rakamlar kullanarak derinlemesine analiz yapmak
+3. Tarafsız, profesyonel ve ikna edici bir rapor üretmek
 
-    // Separator tabanlı bölme
-    const separatorRegex = /\s+(?:vs\.?|veya|karşısında|yerine|mi\s+mı|mu\s+mu|mı\s+mi|mü\s+mü|yoksa|ya\s+da)\s+/i;
-    const parts = text.split(separatorRegex);
-    
-    if (parts.length >= 2) {
-      return {
-        nameA: parts[0].trim().substring(0, 40),
-        nameB: parts[1].trim().substring(0, 40)
-      };
-    }
+KRİTİK KURAL — SEÇENEKLERİ DOĞRU PARSE ET:
+- "kahve mi enerji içeceği mi" → nameA: "Kahve", nameB: "Enerji İçeceği"
+- "evde yemek mi dışarıda mı" → nameA: "Evde Yemek", nameB: "Dışarıda Yemek"  
+- "X vs Y" → nameA: "X", nameB: "Y"
+- "X yerine Y" → nameA: "X", nameB: "Y"
+- Soru işaretlerini, bağlaçları (mi/mı/mu/mü, ya da, yoksa) ÇIKAR, sadece karşılaştırılan kavramları al
+- İsimleri kısa ve öz tut (max 30 karakter), gereksiz kelime ekleme
 
-    // Son çare: cümleyi ortadan böl
-    const words = text.trim().split(/\s+/);
-    const mid = Math.floor(words.length / 2);
-    return {
-      nameA: words.slice(0, mid).join(' ').substring(0, 40),
-      nameB: words.slice(mid).join(' ').substring(0, 40)
-    };
-  };
+YANIT FORMAT — SADECE JSON, başka hiçbir şey yazma:
+{
+  "nameA": "Seçenek A ismi (kısa, öz)",
+  "nameB": "Seçenek B ismi (kısa, öz)",
+  "winner": "A veya B",
+  "summary": "2-3 cümle profesyonel özet, somut veri içermeli",
+  "comparisonTable": [
+    {"metric": "Metrik adı", "optionA": "A için somut, spesifik değer/açıklama", "optionB": "B için somut, spesifik değer/açıklama"},
+    {"metric": "...", "optionA": "...", "optionB": "..."},
+    {"metric": "...", "optionA": "...", "optionB": "..."},
+    {"metric": "...", "optionA": "...", "optionB": "..."},
+    {"metric": "...", "optionA": "...", "optionB": "..."},
+    {"metric": "...", "optionA": "...", "optionB": "..."}
+  ],
+  "scorecard": [
+    {"metric": "Metrik", "scoreA": 7, "scoreB": 5},
+    {"metric": "Metrik", "scoreA": 4, "scoreB": 8},
+    {"metric": "Metrik", "scoreA": 8, "scoreB": 6},
+    {"metric": "Metrik", "scoreA": 6, "scoreB": 9},
+    {"metric": "Metrik", "scoreA": 7, "scoreB": 5}
+  ],
+  "hiddenCosts": [
+    "Spesifik gizli maliyet 1 — somut veri veya araştırma ile destekle",
+    "Spesifik gizli maliyet 2",
+    "Spesifik gizli maliyet 3",
+    "Spesifik gizli maliyet 4"
+  ],
+  "finalRecommendation": "Detaylı, somut verilere dayanan 4-5 cümle tavsiye. **vurgular** için çift yıldız kullan. Kesin rakamlar, yüzdeler veya araştırma bulguları içersin."
+}
+
+ÖNEMLİ KURALLAR:
+- comparisonTable metrikleri konuya özgü olsun (genel "Maliyet/Ekonomi" değil, "Aylık Maliyet (Türkiye)" gibi spesifik)
+- Her metrik değeri somut olsun: "~₺800/ay" veya "Yüksek kafein toleransı riski" gibi
+- scorecard skorları gerçekçi ve farklılaştırılmış olsun (hepsi aynı olmasın)
+- hiddenCosts gerçek, araştırmaya dayalı riskler içersin
+- Türkçe yaz, profesyonel ton kullan`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: `Şu ikilemi analiz et: "${text}"` }]
+    })
+  });
+
+  const data = await response.json();
+  const raw = data.content?.[0]?.text || '';
   
-  const options = parseOptions(text);
-  
-  const winner = Math.random() > 0.5 ? 'A' : 'B';
-  
-  const scoreA = winner === 'A' ? Math.floor(Math.random() * 3) + 7 : Math.floor(Math.random() * 4) + 3;
-  const scoreB = winner === 'B' ? Math.floor(Math.random() * 3) + 7 : Math.floor(Math.random() * 4) + 3;
-  
+  // JSON temizle ve parse et
+  const clean = raw.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
+
   return {
-    summary: `"${options.nameA}" ile "${options.nameB}" arasındaki ikileminde **${winner === 'A' ? options.nameA : options.nameB}** rasyonel olarak öne çıkıyor.`,
-    winner: winner,
-    extractedOptions: options,
-    
-    comparisonTable: [
-      { 
-        metric: 'Maliyet/Ekonomi', 
-        optionA: winner === 'A' ? 'Daha uygun' : 'Daha pahalı', 
-        optionB: winner === 'B' ? 'Daha uygun' : 'Daha pahalı' 
-      },
-      { 
-        metric: 'Zaman/Hız', 
-        optionA: winner === 'A' ? 'Hızlı/Verimli' : 'Yavaş/Karmaşık', 
-        optionB: winner === 'B' ? 'Hızlı/Verimli' : 'Yavaş/Karmaşık' 
-      },
-      { 
-        metric: 'Risk/Kolaylık', 
-        optionA: winner === 'A' ? 'Düşük risk' : 'Yüksek risk', 
-        optionB: winner === 'B' ? 'Düşük risk' : 'Yüksek risk' 
-      },
-      { 
-        metric: 'Getiri/Fayda', 
-        optionA: winner === 'A' ? 'Yüksek getiri' : 'Sınırlı getiri', 
-        optionB: winner === 'B' ? 'Yüksek getiri' : 'Sınırlı getiri' 
-      },
-      { 
-        metric: 'Sürdürülebilirlik', 
-        optionA: winner === 'A' ? 'Uzun vadeli' : 'Kısa vadeli', 
-        optionB: winner === 'B' ? 'Uzun vadeli' : 'Kısa vadeli' 
-      }
-    ],
-    
-    scorecard: [
-      { metric: 'Ekonomik Avantaj', scoreA: winner === 'A' ? 9 : 4, scoreB: winner === 'B' ? 9 : 4 },
-      { metric: 'Pratiklik', scoreA: winner === 'A' ? 8 : 5, scoreB: winner === 'B' ? 8 : 5 },
-      { metric: 'Risk Yönetimi', scoreA: winner === 'A' ? 9 : 3, scoreB: winner === 'B' ? 9 : 3 },
-      { metric: 'Uzun Vade Potansiyeli', scoreA: winner === 'A' ? 8 : 6, scoreB: winner === 'B' ? 8 : 6 }
-    ],
-    
-    hiddenCosts: winner === 'A' ? [
-      `${options.nameB} seçeneğinde görünmeyen başlangıç maliyetleri zamanla birikebilir`,
-      `${options.nameB} için psikolojik uyum süreci ve öğrenme eğrisi maliyetleri`,
-      `${options.nameB} fırsat maliyeti: ${options.nameA} ile kazanılabilecek faydalar`
-    ] : [
-      `${options.nameA} seçeneğinde görünmeyen başlangıç maliyetleri zamanla birikebilir`,
-      `${options.nameA} için psikolojik uyum süreci ve öğrenme eğrisi maliyetleri`,
-      `${options.nameA} fırsat maliyeti: ${options.nameB} ile kazanılabilecek faydalar`
-    ],
-    
-    finalRecommendation: `## ${winner === 'A' ? options.nameA : options.nameB} Önerilir
-
-**${winner === 'A' ? options.nameA : options.nameB}** rasyonel olarak daha güçlü bir seçenektir. 
-
-${winner === 'A' ? options.nameB : options.nameA} alternatifinin getirdiği belirsizlikler ve maliyetler göz önüne alındığında, **${winner === 'A' ? options.nameA : options.nameB}** daha sürdürülebilir bir yol sunmaktadır.
-
-Analiz sonucunda **${winner === 'A' ? options.nameA : options.nameB}** tercihi önerilmektedir.`
+    summary: parsed.summary,
+    winner: parsed.winner,
+    extractedOptions: { nameA: parsed.nameA, nameB: parsed.nameB },
+    comparisonTable: parsed.comparisonTable,
+    scorecard: parsed.scorecard,
+    hiddenCosts: parsed.hiddenCosts,
+    finalRecommendation: parsed.finalRecommendation
   };
 };
 
